@@ -116,7 +116,7 @@ app.post("/mensajes", (req, res) => {
     });
 });
 
-// 3. Eliminar un mensaje (DELETE) - Corregido a tabla 'contacto_ms'
+// 3. Eliminar un mensaje (DELETE)
 app.delete("/mensajes/:id", (req, res) => {
     const id = req.params.id;
     const sql = "DELETE FROM contacto_ms WHERE id = ?";
