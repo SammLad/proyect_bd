@@ -1,6 +1,7 @@
 const API_URL = "http://localhost:3000";
 
 // Elementos del DOM
+// PRODUCTOS
 const listaProductos = document.getElementById("listaProductos");
 const formulario = document.getElementById("formularioProducto");
 const productoId = document.getElementById("productoId");
@@ -10,7 +11,20 @@ const stockInput = document.getElementById("stock");
 const btnGuardar = document.getElementById("btnGuardar");
 const btnCancelar = document.getElementById("btnCancelar");
 const tituloFormulario = document.getElementById("tituloFormulario");
+
+
+// MENSAJES
+const listaMensajes = document.getElementById("listaMensajes");
 const formContacto = document.getElementById("formularioContacto");
+const mensajeId = document.getElementById("mensajeId");
+const nombreCompletoInput = document.getElementById("nombreCompleto");
+const emailInput = document.getElementById("email");
+const asuntoInput = document.getElementById("asunto");
+const mensajeInput = document.getElementById("mensaje");
+
+
+
+
 
 // 1. Función para consultar los productos y mostrarlos en el DOM (READ)
 async function cargarProductos() {
@@ -132,14 +146,94 @@ async function eliminarProducto(id) {
     }
 }
 
-// 5. Formulario de contacto (demostrativo en contacto.html)
-// if (formContacto) {
-//     formContacto.addEventListener("submit", (e) => {
-//         e.preventDefault();
-//         alert("¡Mensaje de contacto enviado con éxito!");
-//         formContacto.reset();
-//     });
-// }
+
+
+// ==========================================================================================================
+// Leer mensajes
+async function cargarMensajes() {
+    if (!listaMensajes) return;
+
+    try {
+        const respuesta = await fetch(`${API_URL}/mensajes`);
+        const mensajes = await respuesta.json();
+
+        listaMensajes.innerHTML = "";
+
+        if (mensajes.length === 0) {
+            listaMensajes.innerHTML = "<p style='color: #64748b;'>No hay mensajes registrados.</p>";
+            return;
+        }
+
+        mensajes.forEach((msg) => {
+            const elemento = document.createElement("div");
+            elemento.classList.add("producto");
+
+            elemento.innerHTML = `
+                <div>
+                  <h3>${msg.nombre}</h3>
+                  <p><strong>Email:</strong> ${msg.email}</p>
+                  <p><strong>Asunto:</strong> ${msg.asunto}</p>
+                  <p><strong>Mensaje:</strong> ${msg.mensaje}</p>
+                  <p style="font-size: 0.8rem; color: #94a3b8;">Fecha: ${msg.fecha_hora}</p>
+                </div>
+                <div class="acciones" style="margin-top: 10px;">
+                  <button class="btn-eliminar" onclick="eliminarMensaje(${msg.id})">Eliminar</button>
+                </div>
+            `;
+            listaMensajes.appendChild(elemento);
+        });
+    } catch (error) {
+        console.error("Error al cargar mensajes:", error);
+    }
+}
+
+// Cargar mensaje
+
+if (formContacto) {
+    formContacto.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const nombre = nombreCompletoInput.value;
+        const email = emailInput.value;
+        const asunto = asuntoInput.value;
+        const mensaje = mensajeInput.value;
+
+        try {
+            const res = await fetch(`${API_URL}/mensajes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nombre, email, asunto, mensaje }),
+            });
+
+            if (res.ok) {
+                alert("¡Mensaje enviado con éxito!");
+                formContacto.reset();
+                cargarMensajes();
+            }
+        } catch (error) {
+            console.error("Error al enviar el mensaje:", error);
+        }
+    });
+}
+
+// Eliminar mensajes
+
+async function eliminarMensaje(id) {
+    if (!confirm("¿Deseas eliminar este mensaje?")) return;
+
+    try {
+        await fetch(`${API_URL}/mensajes/${id}`, {
+            method: "DELETE",
+        });
+        cargarMensajes();
+    } catch (error) {
+        console.error("Error al eliminar mensaje:", error);
+    }
+}
+
+
+
 
 // Llamado inicial al cargar la página
 cargarProductos();
+cargarMensajes();
