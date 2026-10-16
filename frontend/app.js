@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000";
+const API_URL = "https://proyect-bd.onrender.com";
 
 // Elementos del DOM
 // PRODUCTOS
