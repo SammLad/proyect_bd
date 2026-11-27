@@ -2,12 +2,33 @@ require("dotenv").config()
 const express = require("express");
 const cors = require("cors");
 const conexion = require("./db"); // Importamos la conexión creada en db.js
+const { subirImagenCloudinary } = require("./cloudinary");
 
 const app = express();
 
 // Middlewares globales
 app.use(cors()); // Permitir peticiones desde el frontend
-app.use(express.json()); // Habilitar la lectura de datos en formato JSON en el cuerpo (req.body)
+
+
+// aplicamos limite a 10MB para el envío de imágenes en Base64 en Cloudinary
+app.use(express.json({ limit: "10mb" })); // Habilitar la lectura de datos en formato JSON en el cuerpo (req.body)
+
+
+// Verificar al iniciar que la tabla 'productos' en MySQL tenga la columna imagen_url
+conexion.query("SHOW COLUMNS FROM productos LIKE 'imagen_url'",
+    (err, resultados) => {
+        if (!err && Array.isArray(resultados) && resultados.length === 0) {
+            conexion.query(
+                "ALTER TABLE productos ADD COLUMN imagen_url VARCHAR(500) DEFAULT NULL",
+                (errAlter) => {
+                    if (!errAlter) {
+                        console.log("Columna 'image_url' verificada/agregada en la tabla 'productos'")
+                    }
+                }
+            );
+        }
+    }
+);
 
 // Ruta de prueba
 app.get("/", (req, res) => {
@@ -29,41 +50,71 @@ app.get("/productos", (req, res) => {
 });
 
 // 2. Crear un nuevo producto (CREATE)
-app.post("/productos", (req, res) => {
-    const { nombre, precio, stock } = req.body;
+app.post("/productos", async (req, res) => {
+    try {
+        const { nombre, precio, stock, imagenBase64, imagen_url } = req.body;
+        let urlImagenFinal = imagen_url || null;
 
-    // Consulta parametrizada con '?' para prevenir inyección SQL
-    const sql = "INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)";
-    const valores = [nombre, precio, stock];
 
-    conexion.query(sql, valores, (error, resultado) => {
-        if (error) {
-            console.error("Error al insertar:", error);
-            return res.status(500).json({ mensaje: "Error al crear el producto" });
+        // Si el usuario seleccionó un archivo de imagen, lasubimos a Cloudinary
+        if (imagenBase64) {
+            urlImagenFinal = await subirImagenCloudinary(imagenBase64);
         }
+        // Consulta parametrizada con '?' para prevenir inyección SQL
+        const sql = "INSERT INTO productos (nombre, precio, stock, imagen_url) VALUES (?, ?, ?, ?)";
+        const valores = [nombre, precio, stock, urlImagenFinal];
 
-        res.status(201).json({
-            mensaje: "Producto creado correctamente",
-            id: resultado.insertId,
+        conexion.query(sql, valores, (error, resultado) => {
+            if (error) {
+                console.error("Error al insertar:", error);
+                return res.status(500).json({ mensaje: "Error al crear el producto" });
+            }
+
+            res.status(201).json({
+                mensaje: "Producto creado correctamente",
+                id: resultado.insertId,
+            });
         });
-    });
+    } catch (error) {
+        console.error("Error al subir imagen o crear producto", error.message);
+        res.status(500).json({
+            mensaje: error.message || "Error al subir la imágen a Cloudinary",
+        });
+    }
 });
 
 // 3. Actualizar un producto existente (UPDATE)
-app.put("/productos/:id", (req, res) => {
-    const id = req.params.id;
-    const { nombre, precio, stock } = req.body;
+app.put("/productos/:id", async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { nombre, precio, stock, imagenBase64, imagen_url } = req.body;
+        let urlImagenFinal = imagen_url || null;
 
-    const sql = "UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE id = ?";
-    const valores = [nombre, precio, stock, id];
-
-    conexion.query(sql, valores, (error, resultado) => {
-        if (error) {
-            console.error("Error al actualizar:", error);
-            return res.status(500).json({ mensaje: "Error al actualizar el producto" });
+        // Si el usuario escogió una nueva imágen al editar la subimos a cloudinary
+        if (imagenBase64) {
+            urlImagenFinal = await subirImagenCloudinary(imagenBase64)
         }
-        res.json({ mensaje: "Producto actualizado correctamente" });
-    });
+
+        const sql = "UPDATE productos SET nombre = ?, precio = ?, stock = ?, imagen_url = COALESCE(?, imagen_url) WHERE id = ?";
+        const valores = [nombre, precio, stock, urlImagenFinal, id];
+
+        conexion.query(sql, valores, (error, resultado) => {
+            if (error) {
+                console.error("Error al actualizar:", error);
+                return res.status(500).json({ mensaje: "Error al actualizar el producto" });
+            }
+            res.json({
+                mensaje: "Producto actualizado correctamente",
+                imagen_url: urlImagenFinal
+            }
+            );
+        });
+    } catch (error) {
+        console.error("Error al actualiza producto o imagen", error.message);
+        res.status(500).json({
+            mensaje: error.message || "Error al actualizar la imagen en Cloudinary"
+        })
+    }
 });
 
 // 4. Eliminar un producto (DELETE)
@@ -130,6 +181,12 @@ app.delete("/mensajes/:id", (req, res) => {
         res.json({ mensaje: "Mensaje eliminado correctamente" });
     });
 });
+
+
+
+
+//====================================================================================================================
+
 
 // Iniciar servidor en el puerto 3000
 const PORT = process.env.PORT || 3000
