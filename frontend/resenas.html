@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <title>Contacto</title>
+</head>
+
+<body>
+    <!-- ===== BARRA DE NAVEGACIÓN (NAVBAR) ===== -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Mi<span>Tienda</span></a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="productos.html">Productos</a></li>
+                    <li><a href="resenas.html" class="active">Reseñas</a></li>
+                    <li><a href="contacto.html">Contacto</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="contenedor">
+        <div class="encabezado-principal">
+            <h1>Sistema de Reseñas</h1>
+            <p>¿Tienes algunas duda?, dejanos una reseña y te responderemos</p>
+        </div>
+
+
+        <div class="panel-tienda">
+            <!-- SECCIÓN 3: Formulario de reseñas -->
+            <section class="tarjeta" id="registro">
+                <h2 id="tituloFormulario">Envíanos una Reseña</h2>
+
+                <form id="formularioResena">
+                    <!-- Campo oculto para almacenar el ID en caso de edición -->
+                    <input type="hidden" id="resenaId" value="" />
+                    <input type="hidden" id="fechaHora" value="" />
+
+                    <div class="campo">
+                        <label for="nombreCompleto">Nombre completo:</label>
+                        <input type="text" id="nombreCompleto" placeholder="Ej: Laura Ladino" required />
+
+                        <!-- <label for="email">Correo electrónico:</label>
+                        <input type="email" id="email" placeholder="Ej: nombre@correo.com" required /> -->
+                        <label for="productosName">Productos:</label>
+                        <select name="productos-lista" id="productosName" required>
+                            <option></option>
+                        </select>
+                    </div>
+
+                    <div class="campo">
+                        <label for="resena">Reseña:</label>
+                        <textarea id="resena" rows="6" placeholder="Escribe tu reseña detallado aquí..."
+                            required></textarea>
+                    </div>
+
+                    <div class="acciones-form">
+                        <button type="submit" id="btnGuardar" class="btn btn-guardar">Enviar Reseña</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- SECCIÓN 4: Lista de Reseñas -->
+            <section class="tarjeta" id="resenas">
+                <h2>Lista de Reseñas</h2>
+                <div id="listaResenas" class="lista-ms">
+                    <!-- Las reseñas se cargan desde app.js -->
+                </div>
+            </section>
+        </div>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>
